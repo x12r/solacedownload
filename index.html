@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Share Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0323 0%, #2e0f4b 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #7832C7, #B445FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(180, 69, 255, 0.3);
+        }
+
+        .header p {
+            color: #b8b8d1;
+            font-size: 1.1em;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        @media (min-width: 768px) {
+            .main-content {
+                flex-direction: row;
+            }
+        }
+
+        .upload-section, .links-section {
+            flex: 1;
+            background: rgba(30, 10, 55, 0.8);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(120, 50, 200, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .links-section {
+            overflow-y: auto;
+            max-height: 500px;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #B445FF;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            font-size: 1.2em;
+        }
+
+        .upload-area {
+            border: 3px dashed rgba(180, 69, 255, 0.3);
+            border-radius: 15px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area:hover {
+            border-color: #B445FF;
+            background: rgba(180, 69, 255, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .upload-area.dragover {
+            border-color: #7832C7;
+            background: rgba(120, 50, 200, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            color: #B445FF;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: #e0e0ff;
+        }
+
+        .upload-subtext {
+            color: #b8b8d1;
+            font-size: 0.9em;
+        }
+
+        #fileInput {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-info {
+            background: rgba(45, 15, 75, 0.6);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .file-info.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .file-info h4 {
+            color: #B445FF;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .file-details {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            font-size: 0.9em;
+            color: #d0d0ff;
+        }
+
+        .generate-btn {
+            background: linear-gradient(135deg, #7832C7 0%, #B445FF 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(180, 69, 255, 0.4);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .links-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .link-item {
+            background: rgba(45, 15, 75, 0.6);
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid rgba(120, 50, 200, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .link-item:hover {
+            border-color: #B445FF;
+            background: rgba(180, 69, 255, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .link-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .link-filename {
+            font-weight: bold;
+            color: #e0e0ff;
+            font-size: 1.1em;
+            word-break: break-all;
+        }
+
+        .link-date {
+            font-size: 0.8em;
+            color: #b8b8d1;
+        }
+
+        .link-url {
+            background: rgba(15, 3, 35, 0.6);
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            word-break: break-all;
+            color: #d0d0ff;
+            border: 1px solid rgba(120, 50, 200, 0.2);
+        }
+
+        .link-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .copy-btn {
+            background: linear-gradient(135deg, #2e0f4b 0%, #7832C7 100%);
+            color: white;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #7832C7 0%, #B445FF 100%);
+            color: white;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .no-links {
+            text-align: center;
+            padding: 40px 20px;
+            color: #b8b8d1;
+            font-style: italic;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #B445FF;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid rgba(180, 69, 255, 0.2);
+            border-top: 3px solid #B445FF;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #2e0f4b 0%, #7832C7 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            display: none;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            display: flex;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .instructions {
+            background: rgba(45, 15, 75, 0.6);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        .instructions h3 {
+            color: #B445FF;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+            color: #d0d0ff;
+        }
+
+        .instructions li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .instructions code {
+            background: rgba(15, 3, 35, 0.8);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #B445FF;
+        }
+
+        .file-size-limit {
+            text-align: center;
+            margin-top: 10px;
+            color: #b8b8d1;
+            font-size: 0.9em;
+        }
+
+        .file-size-limit strong {
+            color: #B445FF;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✨ File Share Generator</h1>
+            <p>Upload files and generate instant download links</p>
+        </div>
+
+        <div class="main-content">
+            <div class="upload-section">
+                <h2 class="section-title">📁 Upload File</h2>
+                
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📤</div>
+                    <div class="upload-text">Drag & Drop your file here</div>
+                    <div class="upload-subtext">or click to browse</div>
+                    <input type="file" id="fileInput">
+                </div>
+
+                <div class="file-size-limit">
+                    Maximum file size: <strong>100 MB</strong>
+                </div>
+
+                <div class="file-info" id="fileInfo">
+                    <h4>Selected File</h4>
+                    <div class="file-details" id="fileDetails"></div>
+                </div>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    Generating download link...
+                </div>
+
+                <button class="generate-btn" id="generateBtn" disabled>Generate Download Link</button>
+            </div>
+
+            <div class="links-section">
+                <h2 class="section-title">🔗 Generated Links</h2>
+                <div class="links-list" id="linksList">
+                    <!-- Links will be added here dynamically -->
+                    <div class="no-links">No links generated yet. Upload a file to get started!</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h3>How to Use</h3>
+            <ol>
+                <li><strong>Upload a file</strong> using the upload area or by clicking to browse</li>
+                <li><strong>Click "Generate Download Link"</strong> to create a unique download URL</li>
+                <li><strong>Share the link</strong> with others - they can download the file directly</li>
+                <li><strong>Links are stored</strong> in your browser's local storage (persists until cleared)</li>
+                <li>To download a file, simply visit the generated URL</li>
+            </ol>
+            <p style="margin-top: 15px; color: #b8b8d1;">
+                💡 <strong>Note:</strong> This is a client-side tool. Files are converted to data URLs and stored locally.
+                For large files or production use, consider server-side storage.
+            </p>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // DOM Elements
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileDetails = document.getElementById('fileDetails');
+        const generateBtn = document.getElementById('generateBtn');
+        const loading = document.getElementById('loading');
+        const linksList = document.getElementById('linksList');
+        const toast = document.getElementById('toast');
+
+        // State
+        let selectedFile = null;
+        const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 MB
+
+        // Load existing links from localStorage
+        let links = JSON.parse(localStorage.getItem('fileLinks') || '[]');
+        renderLinks();
+
+        // Event Listeners
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                handleFileSelect(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        generateBtn.addEventListener('click', generateLink);
+
+        // Functions
+        function handleFileSelect(file) {
+            if (file.size > MAX_FILE_SIZE) {
+                showToast('File size exceeds 100 MB limit', 'error');
+                return;
+            }
+
+            selectedFile = file;
+            
+            // Update file info display
+            const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            fileDetails.innerHTML = `
+                <div><strong>Name:</strong> ${file.name}</div>
+                <div><strong>Size:</strong> ${sizeMB} MB</div>
+                <div><strong>Type:</strong> ${file.type || 'Unknown'}</div>
+                <div><strong>Last Modified:</strong> ${new Date(file.lastModified).toLocaleDateString()}</div>
+            `;
+            
+            fileInfo.classList.add('show');
+            generateBtn.disabled = false;
+        }
+
+        function generateLink() {
+            if (!selectedFile) return;
+
+            loading.classList.add('show');
+            generateBtn.disabled = true;
+
+            // Simulate processing delay
+            setTimeout(() => {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    // Create a unique ID for the file
+                    const fileId = 'file_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    
+                    // Create a data URL
+                    const dataUrl = e.target.result;
+                    
+                    // Create link object
+                    const link = {
+                        id: fileId,
+                        filename: selectedFile.name,
+                        size: selectedFile.size,
+                        type: selectedFile.type,
+                        dataUrl: dataUrl,
+                        createdAt: new Date().toISOString(),
+                        downloadCount: 0
+                    };
+                    
+                    // Add to links array
+                    links.unshift(link);
+                    
+                    // Save to localStorage
+                    localStorage.setItem('fileLinks', JSON.stringify(links));
+                    
+                    // Update UI
+                    renderLinks();
+                    
+                    // Reset form
+                    selectedFile = null;
+                    fileInput.value = '';
+                    fileInfo.classList.remove('show');
+                    generateBtn.disabled = false;
+                    loading.classList.remove('show');
+                    
+                    // Show success message
+                    showToast('Download link generated successfully!', 'success');
+                    
+                    // Create and show the direct download link
+                    const directLink = createDownloadPage(link);
+                    
+                    // Add to recent links
+                    const linkObj = {
+                        id: link.id,
+                        filename: link.filename,
+                        url: directLink,
+                        date: new Date().toLocaleString()
+                    };
+                    
+                    // The link is already rendered by renderLinks()
+                };
+                
+                reader.onerror = function() {
+                    loading.classList.remove('show');
+                    generateBtn.disabled = false;
+                    showToast('Error reading file', 'error');
+                };
+                
+                reader.readAsDataURL(selectedFile);
+            }, 1000);
+        }
+
+        function createDownloadPage(link) {
+            // Create a simple HTML page with auto-download
+            const downloadPage = `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Download ${link.filename}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0323 0%, #2e0f4b 100%);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            text-align: center;
+            background: rgba(30, 10, 55, 0.9);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(120, 50, 200, 0.2);
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 {
+            color: #B445FF;
+            margin-bottom: 20px;
+        }
+        .file-info {
+            background: rgba(45, 15, 75, 0.6);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .download-btn {
+            background: linear-gradient(135deg, #7832C7 0%, #B445FF 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 20px 0;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(180, 69, 255, 0.4);
+        }
+        .loading {
+            color: #B445FF;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📥 Download File</h1>
+        <div class="file-info">
+            <h3>${link.filename}</h3>
+            <p>Size: ${(link.size / (1024 * 1024)).toFixed(2)} MB</p>
+            <p>Type: ${link.type || 'Unknown'}</p>
+        </div>
+        <a href="${link.dataUrl}" download="${link.filename}" class="download-btn" id="downloadLink">
+            Download ${link.filename}
+        </a>
+        <p class="loading" id="loadingText">Starting download...</p>
+        <script>
+            // Auto-click download link
+            document.getElementById('downloadLink').click();
+            // Update download count
+            try {
+                const links = JSON.parse(localStorage.getItem('fileLinks') || '[]');
+                const linkIndex = links.findIndex(l => l.id === '${link.id}');
+                if (linkIndex > -1) {
+                    links[linkIndex].downloadCount = (links[linkIndex].downloadCount || 0) + 1;
+                    localStorage.setItem('fileLinks', JSON.stringify(links));
+                }
+            } catch(e) {}
+            // Update loading text
+            setTimeout(() => {
+                document.getElementById('loadingText').textContent = 'Download started! If it doesn\'t start automatically, click the button above.';
+            }, 1000);
+        <\/script>
+    </div>
+</body>
+</html>`;
+
+            // Create a blob URL for the download page
+            const blob = new Blob([downloadPage], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            
+            // Return the blob URL
+            return url;
+        }
+
+        function renderLinks() {
+            if (links.length === 0) {
+                linksList.innerHTML = '<div class="no-links">No links generated yet. Upload a file to get started!</div>';
+                return;
+            }
+
+            linksList.innerHTML = '';
+            
+            links.slice(0, 10).forEach(link => {
+                const linkElement = document.createElement('div');
+                linkElement.className = 'link-item';
+                
+                const sizeMB = (link.size / (1024 * 1024)).toFixed(2);
+                const date = new Date(link.createdAt).toLocaleString();
+                const downloadPageUrl = createDownloadPage(link);
+                
+                linkElement.innerHTML = `
+                    <div class="link-header">
+                        <div class="link-filename">${link.filename}</div>
+                        <div class="link-date">${date}</div>
+                    </div>
+                    <div class="link-details">
+                        <div style="font-size: 0.9em; color: #b8b8d1; margin-bottom: 5px;">
+                            ${sizeMB} MB • Downloads: ${link.downloadCount || 0}
+                        </div>
+                    </div>
+                    <div class="link-url" title="${downloadPageUrl}">
+                        ${window.location.origin + window.location.pathname}#${link.id}
+                    </div>
+                    <div class="link-actions">
+                        <button class="action-btn copy-btn" onclick="copyToClipboard('${downloadPageUrl}')">
+                            📋 Copy Link
+                        </button>
+                        <a href="${downloadPageUrl}" target="_blank" class="action-btn download-btn">
+                            ⬇️ Download
+                        </a>
+                    </div>
+                `;
+                
+                linksList.appendChild(linkElement);
+            });
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Link copied to clipboard!', 'success');
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                showToast('Failed to copy link', 'error');
+            });
+        }
+
+        function showToast(message, type = 'info') {
+            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+            toast.innerHTML = `${icon} ${message}`;
+            toast.className = `toast show ${type}`;
+            
+            setTimeout(() => {
+                toast.className = 'toast';
+            }, 3000);
+        }
+
+        // Handle hash-based direct downloads
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.location.hash) {
+                const fileId = window.location.hash.substring(1);
+                const link = links.find(l => l.id === fileId);
+                
+                if (link) {
+                    // Redirect to download page
+                    const downloadPageUrl = createDownloadPage(link);
+                    window.location.href = downloadPageUrl;
+                }
+            }
+        });
+
+        // Initialize with example if localStorage is empty
+        if (links.length === 0) {
+            // Add an example file for demonstration
+            const exampleText = "This is an example text file.\nGenerated by File Share Generator.\n\nUpload your own files to generate download links!";
+            const exampleBlob = new Blob([exampleText], { type: 'text/plain' });
+            const exampleFile = new File([exampleBlob], 'example.txt', { 
+                type: 'text/plain',
+                lastModified: Date.now()
+            });
+            
+            // Don't auto-populate with example
+            // handleFileSelect(exampleFile);
+        }
+    </script>
+</body>
+</html>
